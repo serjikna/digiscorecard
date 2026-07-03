@@ -36,11 +36,11 @@
     overscroll-behavior: none;
   }
 
-  /* ââ VIEWS ââ */
+  /* ── VIEWS ── */
   .view { display: none; flex-direction: column; min-height: 100dvh; }
   .view.active { display: flex; }
 
-  /* ââ HOME ââ */
+  /* ── HOME ── */
   #home {
     align-items: center;
     justify-content: flex-start;
@@ -137,7 +137,7 @@
     padding: 24px 0;
   }
 
-  /* ââ SETUP ââ */
+  /* ── SETUP ── */
   #setup {
     padding: 0;
     flex-direction: column;
@@ -255,7 +255,7 @@
     margin-top: 16px;
   }
 
-  /* ââ SCORECARD ââ */
+  /* ── SCORECARD ── */
   #scorecard { padding: 0; }
 
   /* Live score bar */
@@ -513,7 +513,7 @@
     color: var(--red);
   }
 
-  /* ââ BOTTOM ACTION BAR ââ */
+  /* ── BOTTOM ACTION BAR ── */
   .bottom-bar {
     position: fixed;
     bottom: 0;
@@ -528,7 +528,7 @@
 
   .bottom-bar .btn { flex: 1; height: 48px; font-size: 15px; }
 
-  /* ââ SUMMARY VIEW ââ */
+  /* ── SUMMARY VIEW ── */
   #summary { padding: 0; }
 
   .summary-scroll {
@@ -629,7 +629,7 @@
   .dist-badge.double-col { border: 1px solid rgba(224,82,82,.4); }
   .dist-badge.double-col .dist-badge-val { color: var(--red); }
 
-  /* ââ ROUNDS HISTORY ââ */
+  /* ── ROUNDS HISTORY ── */
   #history { padding: 0; }
 
   .history-scroll {
@@ -674,17 +674,17 @@
 </head>
 <body>
 
-<!-- ââââââââââââââ HOME ââââââââââââââ -->
+<!-- ══════════════ HOME ══════════════ -->
 <div id="home" class="view active">
-  <div class="home-icon">â³</div>
+  <div class="home-icon">⛳</div>
   <div class="home-title">Golf Scorecard</div>
   <div class="home-sub">Track every shot, hole by hole</div>
 
   <button class="btn btn-primary" onclick="showView('setup'); initSetup()">
-    ï¼ New Round
+    ＋ New Round
   </button>
   <button class="btn btn-secondary" onclick="showView('history'); renderHistory()">
-    ð Past Rounds
+    📋 Past Rounds
   </button>
 
   <div class="rounds-section">
@@ -693,10 +693,10 @@
   </div>
 </div>
 
-<!-- ââââââââââââââ SETUP ââââââââââââââ -->
+<!-- ══════════════ SETUP ══════════════ -->
 <div id="setup" class="view">
   <div class="sheet-header">
-    <button class="back-btn" onclick="showView('home'); renderRecent()">â¹ Back</button>
+    <button class="back-btn" onclick="showView('home'); renderRecent()">‹ Back</button>
     <div class="sheet-title">New Round</div>
   </div>
   <div class="setup-body">
@@ -710,17 +710,17 @@
     </div>
 
     <div class="field-group">
-      <div class="par-section-label">Front 9 â Par per Hole</div>
+      <div class="par-section-label">Front 9 — Par per Hole</div>
       <div class="par-grid" id="par-front"></div>
-      <div class="par-section-label" style="margin-top:18px">Back 9 â Par per Hole</div>
+      <div class="par-section-label" style="margin-top:18px">Back 9 — Par per Hole</div>
       <div class="par-grid" id="par-back"></div>
     </div>
 
-    <button class="btn btn-primary" style="margin-top:8px" onclick="startRound()">Start Round â</button>
+    <button class="btn btn-primary" style="margin-top:8px" onclick="startRound()">Start Round →</button>
   </div>
 </div>
 
-<!-- ââââââââââââââ SCORECARD ââââââââââââââ -->
+<!-- ══════════════ SCORECARD ══════════════ -->
 <div id="scorecard" class="view">
   <!-- Live score bar -->
   <div class="score-bar">
@@ -730,12 +730,12 @@
     </div>
     <div class="score-bar-center">
       <div class="score-stat">
-        <div class="score-stat-val" id="sc-strokes">â</div>
+        <div class="score-stat-val" id="sc-strokes">—</div>
         <div class="score-stat-lbl">Strokes</div>
       </div>
       <div class="vs-par-badge" id="sc-vs-par">E</div>
       <div class="score-stat">
-        <div class="score-stat-val" id="sc-putts">â</div>
+        <div class="score-stat-val" id="sc-putts">—</div>
         <div class="score-stat-lbl">Putts</div>
       </div>
     </div>
@@ -753,37 +753,37 @@
   </div>
 
   <div class="bottom-bar">
-    <button class="btn btn-secondary" onclick="showSummary()">ð Summary</button>
-    <button class="btn btn-primary" onclick="saveAndExport()">ð¾ Save &amp; Export</button>
+    <button class="btn btn-secondary" onclick="showSummary()">📊 Summary</button>
+    <button class="btn btn-primary" onclick="saveAndExport()">💾 Save &amp; Export</button>
   </div>
 </div>
 
-<!-- ââââââââââââââ SUMMARY ââââââââââââââ -->
+<!-- ══════════════ SUMMARY ══════════════ -->
 <div id="summary" class="view">
   <div class="sheet-header">
-    <button class="back-btn" onclick="showView('scorecard')">â¹ Back</button>
+    <button class="back-btn" onclick="showView('scorecard')">‹ Back</button>
     <div class="sheet-title">Round Summary</div>
   </div>
   <div class="summary-scroll" id="summary-body"></div>
   <div class="bottom-bar">
-    <button class="btn btn-secondary" onclick="showView('scorecard')">â Scorecard</button>
-    <button class="btn btn-primary" onclick="saveAndExport()">ð¾ Save &amp; Export</button>
+    <button class="btn btn-secondary" onclick="showView('scorecard')">← Scorecard</button>
+    <button class="btn btn-primary" onclick="saveAndExport()">💾 Save &amp; Export</button>
   </div>
 </div>
 
-<!-- ââââââââââââââ HISTORY ââââââââââââââ -->
+<!-- ══════════════ HISTORY ══════════════ -->
 <div id="history" class="view">
   <div class="sheet-header">
-    <button class="back-btn" onclick="showView('home'); renderRecent()">â¹ Back</button>
+    <button class="back-btn" onclick="showView('home'); renderRecent()">‹ Back</button>
     <div class="sheet-title">Past Rounds</div>
   </div>
   <div class="history-scroll" id="history-body"></div>
 </div>
 
 <script>
-// âââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════
 // STATE
-// âââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════
 const TEE_SHOTS = ["Fairway","Left Rough","Right Rough","Left Bunker","Right Bunker","Woods","Water","OB","Other"];
 const TROUBLE   = new Set(["Left Bunker","Right Bunker","Woods","Water","OB"]);
 
@@ -806,9 +806,9 @@ function blankRound(course, date, pars) {
   };
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════
 // STORAGE
-// âââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════
 function saveRounds(rounds) {
   localStorage.setItem("golf_rounds", JSON.stringify(rounds));
 }
@@ -825,18 +825,18 @@ function saveCurrentRound() {
   saveRounds(rounds);
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════
 // NAVIGATION
-// âââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════
 function showView(id) {
   document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
   document.getElementById(id).classList.add("active");
   window.scrollTo(0,0);
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════
 // SETUP
-// âââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════
 function initSetup() {
   document.getElementById("setup-course").value = "";
   document.getElementById("setup-date").value = new Date().toISOString().split("T")[0];
@@ -873,9 +873,9 @@ function startRound() {
   setTimeout(() => toggleHole(0), 300);
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════
 // SCORECARD
-// âââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════
 function renderScorecard() {
   document.getElementById("sc-course-name").textContent = round.course;
   document.getElementById("sc-date-label").textContent  = fmtDate(round.date);
@@ -913,7 +913,7 @@ function buildHoleCard(i) {
       <div class="hole-header-score">
         ${holeScoreHTML(i)}
       </div>
-      <div class="hole-chevron">âº</div>
+      <div class="hole-chevron">›</div>
     </div>
     <div class="hole-body">
       ${statRow(i, "Strokes", "strokes", 0, 15)}
@@ -935,7 +935,7 @@ function statRow(i, label, key, min, max) {
     <div class="stat-row">
       <div class="stat-label">${label}</div>
       <div class="stepper">
-        <button class="step-btn" onclick="step(${i},'${key}',-1)">â</button>
+        <button class="step-btn" onclick="step(${i},'${key}',-1)">−</button>
         <div class="step-val" id="sv-${i}-${key}">${val}</div>
         <button class="step-btn" onclick="step(${i},'${key}',1)">+</button>
       </div>
@@ -986,7 +986,7 @@ function updateHoleHeader(i) {
 function holeScoreHTML(i) {
   const h   = round.holes[i];
   const par = round.pars[i];
-  if (!h.strokes) return `<div class="hole-score-num" style="color:var(--muted)">â</div>`;
+  if (!h.strokes) return `<div class="hole-score-num" style="color:var(--muted)">—</div>`;
   const diff = h.strokes - par;
   let cls = "", label = "";
   if      (diff <= -2) { cls = "eagle";  label = diff === -2 ? "Eagle" : "Albatross"; }
@@ -1009,8 +1009,8 @@ function updateScoreBar() {
     }
   });
 
-  document.getElementById("sc-strokes").textContent  = holesDone ? totalStrokes : "â";
-  document.getElementById("sc-putts").textContent    = holesDone ? totalPutts : "â";
+  document.getElementById("sc-strokes").textContent  = holesDone ? totalStrokes : "—";
+  document.getElementById("sc-putts").textContent    = holesDone ? totalPutts : "—";
   document.getElementById("sc-holes-done").textContent = holesDone;
 
   const badge = document.getElementById("sc-vs-par");
@@ -1024,9 +1024,9 @@ function updateScoreBar() {
   badge.className = "vs-par-badge " + (diff < 0 ? "under" : diff > 0 ? "over" : "even");
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════
 // SUMMARY
-// âââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════
 function showSummary() {
   renderSummary();
   showView("summary");
@@ -1038,7 +1038,7 @@ function renderSummary() {
   const s = stats;
 
   const vsParFmt = v => v === 0 ? "E" : (v > 0 ? `+${v}` : `${v}`);
-  const pctFmt   = (n, d) => d === 0 ? "â" : `${Math.round(100*n/d)}%`;
+  const pctFmt   = (n, d) => d === 0 ? "—" : `${Math.round(100*n/d)}%`;
 
   // Score dist
   let distHTML = `
@@ -1059,9 +1059,9 @@ function renderSummary() {
     ["Strokes",      s.front.strokes, s.back.strokes, s.total.strokes],
     ["vs Par",       vsParFmt(s.front.vsPar), vsParFmt(s.back.vsPar), vsParFmt(s.total.vsPar)],
     ["Putts",        s.front.putts,   s.back.putts,   s.total.putts],
-    ["Putts/Hole",   s.front.holesDone ? (s.front.putts/s.front.holesDone).toFixed(1) : "â",
-                     s.back.holesDone  ? (s.back.putts/s.back.holesDone).toFixed(1)   : "â",
-                     s.total.holesDone ? (s.total.putts/s.total.holesDone).toFixed(1)  : "â"],
+    ["Putts/Hole",   s.front.holesDone ? (s.front.putts/s.front.holesDone).toFixed(1) : "—",
+                     s.back.holesDone  ? (s.back.putts/s.back.holesDone).toFixed(1)   : "—",
+                     s.total.holesDone ? (s.total.putts/s.total.holesDone).toFixed(1)  : "—"],
     ["Chips",        s.front.chips,   s.back.chips,   s.total.chips],
     ["GIR",          s.front.gir,     s.back.gir,     s.total.gir],
     ["GIR %",        pctFmt(s.front.gir, s.front.holesDone), pctFmt(s.back.gir, s.back.holesDone), pctFmt(s.total.gir, s.total.holesDone)],
@@ -1073,7 +1073,7 @@ function renderSummary() {
 
   const tableRows = rows.map((r,i) =>
     `<tr${i===rows.length-1?' class="total-row"':''}>
-      ${r.map((v,j) => `<td${j===0?'':''} style="${j===0?'':'font-family:SF Mono,monospace;font-variant-numeric:tabular-nums'}">${v||"â"}</td>`).join("")}
+      ${r.map((v,j) => `<td${j===0?'':''} style="${j===0?'':'font-family:SF Mono,monospace;font-variant-numeric:tabular-nums'}">${v||"—"}</td>`).join("")}
     </tr>`
   ).join("");
 
@@ -1142,9 +1142,9 @@ function calcStats() {
   return { front: halfStats(0,9), back: halfStats(9,18), total: halfStats(0,18) };
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════
 // SAVE & EXPORT (CSV)
-// âââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════
 function saveAndExport() {
   saveCurrentRound();
 
@@ -1191,9 +1191,9 @@ function scoreLabel(diff) {
   return `+${diff} Bogey`;
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════
 // HISTORY
-// âââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════
 function renderHistory() {
   const body = document.getElementById("history-body");
   const rounds = loadRounds();
@@ -1210,7 +1210,7 @@ function renderHistory() {
       <div class="history-card-inner">
         <div style="font-size:16px;font-weight:700">${r.course}</div>
         <div style="font-size:12px;color:var(--muted);margin-top:2px">${fmtDate(r.date)}</div>
-        <div style="font-size:13px;color:var(--muted);margin-top:4px">${s.strokes} strokes Â· ${s.putts} putts Â· ${s.gir} GIR</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:4px">${s.strokes} strokes · ${s.putts} putts · ${s.gir} GIR</div>
         <div style="display:flex;gap:8px;margin-top:8px">
           <button class="btn btn-secondary" style="height:36px;font-size:13px;padding:0 14px;min-width:0;flex:0"
             onclick="loadRound(${r.id})">View</button>
@@ -1265,7 +1265,7 @@ function renderRecent() {
   const el = document.getElementById("recent-rounds-list");
   const rounds = loadRounds().slice(0, 3);
   if (!rounds.length) {
-    el.innerHTML = `<div class="empty-rounds">No rounds yet â tap New Round to start.</div>`;
+    el.innerHTML = `<div class="empty-rounds">No rounds yet — tap New Round to start.</div>`;
     return;
   }
   el.innerHTML = rounds.map(r => {
@@ -1276,16 +1276,16 @@ function renderRecent() {
     return `<div class="round-item" onclick="loadRound(${r.id})">
       <div class="round-item-left">
         <div class="round-item-name">${r.course}</div>
-        <div class="round-item-date">${fmtDate(r.date)} Â· ${s.strokes} strokes</div>
+        <div class="round-item-date">${fmtDate(r.date)} · ${s.strokes} strokes</div>
       </div>
       <div class="round-item-score" style="color:${colour}">${vsStr}</div>
     </div>`;
   }).join("");
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════
 // UTILS
-// âââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════
 function fmtDate(d) {
   if (!d) return "";
   const [y,m,day] = d.split("-");
@@ -1293,9 +1293,9 @@ function fmtDate(d) {
   return `${months[+m-1]} ${+day}, ${y}`;
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════
 // INIT
-// âââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════════════════════
 renderRecent();
 </script>
 </body>
