@@ -265,13 +265,13 @@
     padding: 48px 20px 14px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 10px;
     position: sticky;
     top: 0;
     z-index: 10;
   }
 
-  .score-bar-left { display: flex; flex-direction: column; gap: 2px; }
+  .score-bar-left { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
   .course-name-sm { font-size: 12px; color: var(--muted); font-weight: 500; }
   .score-bar-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
 
@@ -527,6 +527,42 @@
   }
 
   .bottom-bar .btn { flex: 1; height: 48px; font-size: 15px; }
+  .bottom-bar.triple .btn { font-size: 13px; padding: 0 4px; gap: 5px; }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed;
+    bottom: 88px;
+    left: 50%;
+    transform: translateX(-50%) translateY(12px);
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s, transform .25s;
+    z-index: 50;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── SCORE BAR BACK BUTTON ── */
+  .sc-back-btn {
+    background: none;
+    border: none;
+    color: var(--green-lt);
+    font-size: 28px;
+    font-weight: 400;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 2px;
+    flex-shrink: 0;
+    -webkit-font-smoothing: antialiased;
+  }
 
   /* ── SUMMARY VIEW ── */
   #summary { padding: 0; }
@@ -645,17 +681,50 @@
     padding: 16px;
     margin-bottom: 10px;
     display: flex;
+    flex-direction: column;
+  }
+
+  .history-card-top {
+    display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 12px;
+  }
+
+  .history-card-score {
+    font-size: 32px;
+    font-weight: 800;
+    font-family: "SF Mono", monospace;
+    flex-shrink: 0;
   }
 
   .history-card-actions {
     display: flex;
     gap: 8px;
-    margin-top: 12px;
+    margin-top: 14px;
   }
 
-  .history-card-inner { display: flex; flex-direction: column; gap: 4px; }
+  .history-action-btn {
+    flex: 1;
+    height: 44px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--input-bg);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    cursor: pointer;
+    transition: opacity .15s, transform .1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .history-action-btn:active { opacity: .7; transform: scale(.96); }
+  .history-action-btn.delete-btn { color: var(--red); border-color: #6b2020; background: #221010; }
+
+  .history-card-inner { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 
   .tag {
     display: inline-block;
@@ -724,6 +793,7 @@
 <div id="scorecard" class="view">
   <!-- Live score bar -->
   <div class="score-bar">
+    <button class="sc-back-btn" onclick="goHome()">‹</button>
     <div class="score-bar-left">
       <div class="course-name-sm" id="sc-course-name"></div>
       <div class="score-bar-label" id="sc-date-label"></div>
@@ -752,9 +822,10 @@
     <div id="holes-back"></div>
   </div>
 
-  <div class="bottom-bar">
+  <div class="bottom-bar triple">
     <button class="btn btn-secondary" onclick="showSummary()">📊 Summary</button>
-    <button class="btn btn-primary" onclick="saveAndExport()">💾 Save &amp; Export</button>
+    <button class="btn btn-secondary" onclick="saveRound()">💾 Save</button>
+    <button class="btn btn-primary" onclick="exportRound()">⬆️ Export</button>
   </div>
 </div>
 
@@ -765,9 +836,10 @@
     <div class="sheet-title">Round Summary</div>
   </div>
   <div class="summary-scroll" id="summary-body"></div>
-  <div class="bottom-bar">
+  <div class="bottom-bar triple">
     <button class="btn btn-secondary" onclick="showView('scorecard')">← Scorecard</button>
-    <button class="btn btn-primary" onclick="saveAndExport()">💾 Save &amp; Export</button>
+    <button class="btn btn-secondary" onclick="saveRound()">💾 Save</button>
+    <button class="btn btn-primary" onclick="exportRound()">⬆️ Export</button>
   </div>
 </div>
 
@@ -779,6 +851,8 @@
   </div>
   <div class="history-scroll" id="history-body"></div>
 </div>
+
+<div class="toast" id="toast"></div>
 
 <script>
 // ═══════════════════════════════════════════════════
@@ -832,6 +906,21 @@ function showView(id) {
   document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
   document.getElementById(id).classList.add("active");
   window.scrollTo(0,0);
+}
+
+function goHome() {
+  saveCurrentRound();
+  showView("home");
+  renderRecent();
+}
+
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("show"), 1600);
 }
 
 // ═══════════════════════════════════════════════════
@@ -1143,9 +1232,17 @@ function calcStats() {
 }
 
 // ═══════════════════════════════════════════════════
-// SAVE & EXPORT (CSV)
+// SAVE
 // ═══════════════════════════════════════════════════
-function saveAndExport() {
+function saveRound() {
+  saveCurrentRound();
+  toast("✓ Round saved");
+}
+
+// ═══════════════════════════════════════════════════
+// EXPORT (CSV)
+// ═══════════════════════════════════════════════════
+function exportRound() {
   saveCurrentRound();
 
   const lines = [];
@@ -1207,20 +1304,19 @@ function renderHistory() {
     const vsStr = diff === 0 ? "E" : (diff > 0 ? `+${diff}` : `${diff}`);
     const colour = diff < 0 ? "var(--green-lt)" : diff > 0 ? "var(--red)" : "var(--blue)";
     return `<div class="history-card">
-      <div class="history-card-inner">
-        <div style="font-size:16px;font-weight:700">${r.course}</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:2px">${fmtDate(r.date)}</div>
-        <div style="font-size:13px;color:var(--muted);margin-top:4px">${s.strokes} strokes · ${s.putts} putts · ${s.gir} GIR</div>
-        <div style="display:flex;gap:8px;margin-top:8px">
-          <button class="btn btn-secondary" style="height:36px;font-size:13px;padding:0 14px;min-width:0;flex:0"
-            onclick="loadRound(${r.id})">View</button>
-          <button class="btn btn-secondary" style="height:36px;font-size:13px;padding:0 14px;min-width:0;flex:0;color:var(--red);border-color:#6b2020"
-            onclick="deleteRound(${r.id})">Delete</button>
-          <button class="btn btn-secondary" style="height:36px;font-size:13px;padding:0 14px;min-width:0;flex:0"
-            onclick="exportRoundById(${r.id})">Export CSV</button>
+      <div class="history-card-top">
+        <div class="history-card-inner">
+          <div style="font-size:16px;font-weight:700">${r.course}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">${fmtDate(r.date)}</div>
+          <div style="font-size:13px;color:var(--muted);margin-top:4px">${s.strokes} strokes · ${s.putts} putts · ${s.gir} GIR</div>
         </div>
+        <div class="history-card-score" style="color:${colour}">${vsStr}</div>
       </div>
-      <div style="font-size:32px;font-weight:800;color:${colour};font-family:SF Mono,monospace">${vsStr}</div>
+      <div class="history-card-actions">
+        <button class="history-action-btn" onclick="loadRound(${r.id})">👁 View</button>
+        <button class="history-action-btn" onclick="exportRoundById(${r.id})">⬆️ Export</button>
+        <button class="history-action-btn delete-btn" onclick="deleteRound(${r.id})">🗑 Delete</button>
+      </div>
     </div>`;
   }).join("");
 }
@@ -1257,7 +1353,7 @@ function exportRoundById(id) {
   const saved = round;
   const rounds = loadRounds();
   round = rounds.find(r => r.id === id);
-  if (round) saveAndExport();
+  if (round) exportRound();
   round = saved;
 }
 
