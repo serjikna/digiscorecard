@@ -297,6 +297,73 @@
     margin-top: 16px;
   }
 
+  /* Saved scorecard picker */
+  .card-picker { display: flex; flex-direction: column; gap: 8px; }
+
+  .card-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 12px 12px 14px;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+  }
+  .card-option.selected { border-color: var(--green); background: rgba(46,107,63,.12); }
+  .card-option.new-card { border-style: dashed; background: transparent; }
+  .card-option.new-card.selected { background: rgba(46,107,63,.10); }
+
+  .card-option-main { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .card-option-name {
+    font-size: 15px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .card-option-meta { font-size: 12px; color: var(--muted); }
+
+  .card-option-check { color: var(--green); font-size: 15px; font-weight: 800; opacity: 0; flex-shrink: 0; }
+  .card-option.selected .card-option-check { opacity: 1; }
+
+  .card-del {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1;
+    padding: 8px 4px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .card-del:active { color: var(--red); }
+
+  /* Collapsible par editor */
+  .par-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    height: var(--tap);
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 600;
+    padding: 0 14px;
+    cursor: pointer;
+    text-align: left;
+  }
+  .par-toggle-chevron { color: var(--muted); font-size: 15px; transition: transform .2s; }
+  .par-toggle.open .par-toggle-chevron { transform: rotate(90deg); }
+
+  .par-wrap { display: none; margin-top: 14px; }
+  .par-wrap.open { display: block; }
+
   /* ── SCORECARD ── */
   #scorecard { padding: 0; }
 
@@ -846,8 +913,13 @@
   </div>
   <div class="setup-body">
     <div class="field-group">
+      <div class="field-label">Scorecard</div>
+      <div class="card-picker" id="card-picker"></div>
+    </div>
+
+    <div class="field-group">
       <div class="field-label">Course Name</div>
-      <input class="field-input" id="setup-course" type="text" placeholder="e.g. Muskoka Bay Club" autocomplete="off">
+      <input class="field-input" id="setup-course" type="text" placeholder="e.g. Muskoka Bay Club" autocomplete="off" oninput="onCourseNameInput()">
     </div>
     <div class="field-group">
       <div class="field-label">Date</div>
@@ -855,10 +927,16 @@
     </div>
 
     <div class="field-group">
-      <div class="par-section-label">Front 9 — Par per Hole</div>
-      <div class="par-list" id="par-front"></div>
-      <div class="par-section-label" style="margin-top:18px">Back 9 — Par per Hole</div>
-      <div class="par-list" id="par-back"></div>
+      <button type="button" class="par-toggle" id="par-toggle" onclick="toggleParEditor()">
+        <span id="par-toggle-label">Par per Hole — Par 72</span>
+        <span class="par-toggle-chevron">›</span>
+      </button>
+      <div class="par-wrap" id="par-wrap">
+        <div class="par-section-label" style="margin-top:0">Front 9 — Par per Hole</div>
+        <div class="par-list" id="par-front"></div>
+        <div class="par-section-label" style="margin-top:18px">Back 9 — Par per Hole</div>
+        <div class="par-list" id="par-back"></div>
+      </div>
     </div>
 
     <button class="btn btn-primary" style="margin-top:8px" onclick="startRound()">Start Round →</button>
@@ -937,7 +1015,15 @@
 const TEE_SHOTS = ["Fairway","Left Rough","Right Rough","Left Bunker","Right Bunker","Woods","Water","OB","Other"];
 const TROUBLE   = new Set(["Left Bunker","Right Bunker","Woods","Water","OB"]);
 
+const HOLE_KEYS = ["strokes","putts","chips","fwBunker","gsBunker","penalties","punchouts"];
+
 let round = null;  // active round
+
+function blankHole() {
+  const h = { teeShot: "" };
+  HOLE_KEYS.forEach(k => h[k] = 0);
+  return h;
+}
 
 function blankRound(course, date, pars) {
   return {
@@ -945,15 +1031,18 @@ function blankRound(course, date, pars) {
     course,
     date,
     pars,          // array [18]
-    holes: Array.from({length:18}, (_,i) => ({
-      strokes: 0,
-      putts:   0,
-      chips:   0,
-      penalties: 0,
-      punchouts: 0,
-      teeShot:   ""
-    }))
+    holes: Array.from({length:18}, () => blankHole())
   };
+}
+
+// Rounds saved before a counter existed are missing that key — backfill on read.
+function normalizeRound(r) {
+  if (!r || !Array.isArray(r.holes)) return r;
+  r.holes.forEach(h => {
+    HOLE_KEYS.forEach(k => { if (typeof h[k] !== "number") h[k] = 0; });
+    if (typeof h.teeShot !== "string") h.teeShot = "";
+  });
+  return r;
 }
 
 // ═══════════════════════════════════════════════════
@@ -963,8 +1052,41 @@ function saveRounds(rounds) {
   localStorage.setItem("golf_rounds", JSON.stringify(rounds));
 }
 function loadRounds() {
-  try { return JSON.parse(localStorage.getItem("golf_rounds") || "[]"); }
+  try { return (JSON.parse(localStorage.getItem("golf_rounds") || "[]")).map(normalizeRound); }
   catch(e) { return []; }
+}
+
+/* ── Saved scorecards (course name + par layout), reusable across rounds ── */
+function loadCourses() {
+  try {
+    const list = JSON.parse(localStorage.getItem("golf_courses") || "[]");
+    return list.filter(c => c && c.name && Array.isArray(c.pars) && c.pars.length === 18);
+  } catch(e) { return []; }
+}
+function saveCourses(courses) {
+  localStorage.setItem("golf_courses", JSON.stringify(courses.slice(0, 25)));
+}
+function rememberCourse(name, pars) {
+  if (!name || name === "Unnamed Course") return;
+  const courses = loadCourses();
+  const idx = courses.findIndex(c => c.name.toLowerCase() === name.toLowerCase());
+  if (idx >= 0) courses.splice(idx, 1);
+  courses.unshift({ name, pars: pars.slice(), used: Date.now() });
+  saveCourses(courses);
+}
+// Seed the picker from rounds played before scorecards were saved separately.
+function syncCoursesFromRounds() {
+  const courses = loadCourses();
+  const seen = new Set(courses.map(c => c.name.toLowerCase()));
+  loadRounds().forEach(r => {
+    if (!r.course || r.course === "Unnamed Course") return;
+    if (!Array.isArray(r.pars) || r.pars.length !== 18) return;
+    const key = r.course.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    courses.push({ name: r.course, pars: r.pars.slice(), used: r.id || 0 });
+  });
+  saveCourses(courses);
 }
 function saveCurrentRound() {
   if (!round) return;
@@ -1012,13 +1134,97 @@ function toast(msg) {
 // SETUP
 // ═══════════════════════════════════════════════════
 let setupPars = [];
+let pickedCourse = -1;   // index into loadCourses(), or -1 for a brand-new scorecard
 
 function initSetup() {
-  document.getElementById("setup-course").value = "";
   document.getElementById("setup-date").value = new Date().toISOString().split("T")[0];
+  syncCoursesFromRounds();
+  pickNewCourse();
+}
+
+function renderCardPicker() {
+  const el = document.getElementById("card-picker");
+  const courses = loadCourses();
+  const saved = courses.map((c, i) => `
+    <div class="card-option${pickedCourse === i ? ' selected' : ''}" onclick="pickCourse(${i})">
+      <div class="card-option-main">
+        <div class="card-option-name">${esc(c.name)}</div>
+        <div class="card-option-meta">Par ${c.pars.reduce((a,b) => a+b, 0)} · 18 holes</div>
+      </div>
+      <div class="card-option-check">✓</div>
+      <button type="button" class="card-del" onclick="event.stopPropagation(); deleteCourse(${i})">✕</button>
+    </div>`).join("");
+
+  el.innerHTML = saved + `
+    <div class="card-option new-card${pickedCourse === -1 ? ' selected' : ''}" onclick="pickNewCourse()">
+      <div class="card-option-main">
+        <div class="card-option-name">＋ New scorecard</div>
+        <div class="card-option-meta">Enter a course name and pars</div>
+      </div>
+      <div class="card-option-check">✓</div>
+    </div>`;
+}
+
+function pickCourse(i) {
+  const c = loadCourses()[i];
+  if (!c) return;
+  pickedCourse = i;
+  document.getElementById("setup-course").value = c.name;
+  setupPars = c.pars.slice();
+  refreshParEditor();
+  setParEditorOpen(false);   // known layout — keep it tucked away
+  renderCardPicker();
+}
+
+function pickNewCourse() {
+  pickedCourse = -1;
+  document.getElementById("setup-course").value = "";
   setupPars = Array(18).fill(4);
+  refreshParEditor();
+  setParEditorOpen(true);
+  renderCardPicker();
+}
+
+// Renaming by hand means it's no longer the saved card — drop the highlight, keep the pars.
+function onCourseNameInput() {
+  if (pickedCourse === -1) return;
+  const c = loadCourses()[pickedCourse];
+  const typed = document.getElementById("setup-course").value.trim().toLowerCase();
+  if (!c || c.name.toLowerCase() !== typed) {
+    pickedCourse = -1;
+    renderCardPicker();
+  }
+}
+
+function deleteCourse(i) {
+  const courses = loadCourses();
+  const c = courses[i];
+  if (!c || !confirm(`Remove the saved scorecard for ${c.name}?`)) return;
+  courses.splice(i, 1);
+  saveCourses(courses);
+  if (pickedCourse === i) { pickNewCourse(); return; }
+  if (pickedCourse > i) pickedCourse--;
+  renderCardPicker();
+}
+
+function refreshParEditor() {
   buildParGrid("par-front", 1, 9);
   buildParGrid("par-back",  10, 18);
+  updateParToggleLabel();
+}
+
+function updateParToggleLabel() {
+  document.getElementById("par-toggle-label").textContent =
+    `Par per Hole — Par ${setupPars.reduce((a,b) => a+b, 0)}`;
+}
+
+function setParEditorOpen(open) {
+  document.getElementById("par-wrap").classList.toggle("open", open);
+  document.getElementById("par-toggle").classList.toggle("open", open);
+}
+
+function toggleParEditor() {
+  setParEditorOpen(!document.getElementById("par-wrap").classList.contains("open"));
 }
 
 function buildParGrid(containerId, from, to) {
@@ -1041,12 +1247,14 @@ function setPar(h, v) {
   document.querySelectorAll(`#par-seg-${h} .par-seg-btn`).forEach(b => {
     b.classList.toggle("selected", parseInt(b.textContent) === v);
   });
+  updateParToggleLabel();
 }
 
 function startRound() {
   const course = document.getElementById("setup-course").value.trim() || "Unnamed Course";
   const date   = document.getElementById("setup-date").value;
   const pars   = setupPars.slice();
+  rememberCourse(course, pars);
   round = blankRound(course, date, pars);
   saveCurrentRound();
   renderScorecard();
@@ -1101,6 +1309,8 @@ function buildHoleCard(i) {
       ${statRow(i, "Strokes", "strokes", 0, 15)}
       ${statRow(i, "Putts",   "putts",   0, 10)}
       ${statRow(i, "Chips",   "chips",   0, 10)}
+      ${statRow(i, "Fairway Bunker",   "fwBunker", 0, 10)}
+      ${statRow(i, "Greenside Bunker", "gsBunker", 0, 10)}
       ${statRow(i, "Penalties","penalties",0, 5)}
       ${statRow(i, "Punch-outs","punchouts",0, 5)}
       <div style="display:flex;flex-direction:column;gap:6px">
@@ -1112,7 +1322,7 @@ function buildHoleCard(i) {
 }
 
 function statRow(i, label, key, min, max) {
-  const val = round.holes[i][key];
+  const val = round.holes[i][key] || 0;
   return `
     <div class="stat-row">
       <div class="stat-label">${label}</div>
@@ -1245,6 +1455,8 @@ function renderSummary() {
                      s.back.holesDone  ? (s.back.putts/s.back.holesDone).toFixed(1)   : "—",
                      s.total.holesDone ? (s.total.putts/s.total.holesDone).toFixed(1)  : "—"],
     ["Chips",        s.front.chips,   s.back.chips,   s.total.chips],
+    ["FW Bunker",    s.front.fwBunker, s.back.fwBunker, s.total.fwBunker],
+    ["GS Bunker",    s.front.gsBunker, s.back.gsBunker, s.total.gsBunker],
     ["GIR",          s.front.gir,     s.back.gir,     s.total.gir],
     ["GIR %",        pctFmt(s.front.gir, s.front.holesDone), pctFmt(s.back.gir, s.back.holesDone), pctFmt(s.total.gir, s.total.holesDone)],
     ["FW Hit",       s.front.fairways, s.back.fairways, s.total.fairways],
@@ -1296,7 +1508,7 @@ function renderSummary() {
 
 function calcStats() {
   const halfStats = (from, to) => {
-    let strokes=0,par=0,putts=0,chips=0,penalties=0,punchouts=0,gir=0,fairways=0,holesDone=0;
+    let strokes=0,par=0,putts=0,chips=0,fwBunker=0,gsBunker=0,penalties=0,punchouts=0,gir=0,fairways=0,holesDone=0;
     let eagles=0,birdies=0,pars=0,bogeys=0,doubles=0;
     for (let i=from; i<to; i++) {
       const h   = round.holes[i];
@@ -1307,6 +1519,8 @@ function calcStats() {
       par       += p;
       putts     += h.putts;
       chips     += h.chips;
+      fwBunker  += h.fwBunker || 0;
+      gsBunker  += h.gsBunker || 0;
       penalties += h.penalties;
       punchouts += h.punchouts;
       if ((h.strokes - h.putts) <= (p - 2)) gir++;
@@ -1318,7 +1532,7 @@ function calcStats() {
       else if (d === 1)  bogeys++;
       else               doubles++;
     }
-    return {strokes, par, vsPar: strokes-par, putts, chips, penalties, punchouts,
+    return {strokes, par, vsPar: strokes-par, putts, chips, fwBunker, gsBunker, penalties, punchouts,
             gir, fairways, holesDone, eagles, birdies, pars, bogeys, doubles};
   };
   return { front: halfStats(0,9), back: halfStats(9,18), total: halfStats(0,18) };
@@ -1341,23 +1555,23 @@ function exportRound() {
   const lines = [];
   lines.push(`Golf Scorecard - ${round.course} - ${fmtDate(round.date)}`);
   lines.push("");
-  lines.push("Hole,Par,Strokes,Putts,Chips,Tee Shot,Penalties,Punch-outs,GIR,vs Par,Score Label");
+  lines.push("Hole,Par,Strokes,Putts,Chips,FW Bunker,GS Bunker,Tee Shot,Penalties,Punch-outs,GIR,vs Par,Score Label");
 
   round.holes.forEach((h, i) => {
     const par = round.pars[i];
     const gir = h.strokes ? ((h.strokes - h.putts) <= (par - 2) ? "Y" : "N") : "";
     const vsp = h.strokes ? h.strokes - par : "";
     const lbl = h.strokes ? scoreLabel(h.strokes - par) : "";
-    lines.push([i+1, par, h.strokes||"", h.putts||"", h.chips||"",
+    lines.push([i+1, par, h.strokes||"", h.putts||"", h.chips||"", h.fwBunker||"", h.gsBunker||"",
                 h.teeShot, h.penalties||"", h.punchouts||"", gir, vsp, lbl].join(","));
   });
 
   lines.push("");
   const s = calcStats();
-  lines.push(",Par,Strokes,Putts,Chips,,Penalties,Punch-outs,GIR,,");
-  lines.push(`Front 9,${s.front.par},${s.front.strokes},${s.front.putts},${s.front.chips},,${s.front.penalties},${s.front.punchouts},${s.front.gir},,`);
-  lines.push(`Back 9,${s.back.par},${s.back.strokes},${s.back.putts},${s.back.chips},,${s.back.penalties},${s.back.punchouts},${s.back.gir},,`);
-  lines.push(`Total 18,${s.total.par},${s.total.strokes},${s.total.putts},${s.total.chips},,${s.total.penalties},${s.total.punchouts},${s.total.gir},,`);
+  lines.push(",Par,Strokes,Putts,Chips,FW Bunker,GS Bunker,,Penalties,Punch-outs,GIR,,");
+  lines.push(`Front 9,${s.front.par},${s.front.strokes},${s.front.putts},${s.front.chips},${s.front.fwBunker},${s.front.gsBunker},,${s.front.penalties},${s.front.punchouts},${s.front.gir},,`);
+  lines.push(`Back 9,${s.back.par},${s.back.strokes},${s.back.putts},${s.back.chips},${s.back.fwBunker},${s.back.gsBunker},,${s.back.penalties},${s.back.punchouts},${s.back.gir},,`);
+  lines.push(`Total 18,${s.total.par},${s.total.strokes},${s.total.putts},${s.total.chips},${s.total.fwBunker},${s.total.gsBunker},,${s.total.penalties},${s.total.punchouts},${s.total.gir},,`);
 
   const csv  = lines.join("\n");
   const blob = new Blob([csv], {type: "text/csv"});
@@ -1475,6 +1689,11 @@ function renderRecent() {
 // ═══════════════════════════════════════════════════
 // UTILS
 // ═══════════════════════════════════════════════════
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c =>
+    ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
 function fmtDate(d) {
   if (!d) return "";
   const [y,m,day] = d.split("-");
